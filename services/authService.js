@@ -116,7 +116,7 @@ class AuthService {
         const token = jwt.sign(
             payload,
             process.env.TOKEN_SECRET,
-            { expiresIn: `${process.env.TOKEN_EXPIRE}h`}
+            { expiresIn: "2h"}
         );
 
         return token;
@@ -133,9 +133,8 @@ class AuthService {
      */
     async signup(username, email, password) {
 
-        const maxPerEmail = process.env.MAX_USERS_EMAIL;
         if (Boolean(await this.#getUserByUserName(username))) throw new UserExistError();
-        if (await this.#getEmailCount(email) >= maxPerEmail) throw new UserEmailMaxError();
+        if (await this.#getEmailCount(email) >= 4) throw new UserEmailMaxError();
 
         const salt = crypto.randomBytes(32);
         const encryptedPassword = this.#encryptPassword(password, salt);
