@@ -8,19 +8,29 @@ const logger = require('morgan');
 
 // import routes
 const indexRouter = require('./routes/index');
+const auhtRouter = require("./routes/auth");
 
 // initialize database
 const db = require("./models/index")
-db.sequelize.sync({force: true})
+db.sequelize.sync({force: false})
+
+// get middlewares
+const jsend = require("jsend");
 
 // initialize application
 const app = express();
 
+// default middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// adding middlewares
+app.use(jsend.middleware)
+
+// adding routes
 app.use('/', indexRouter);
+app.use("/", auhtRouter);
 
 module.exports = app;

@@ -36,7 +36,8 @@ Packages used in this application are listed here for easy documentation lookup.
 - [MySql2](https://www.npmjs.com/package/mysql2) : MySql library
 - [Jsend](https://www.npmjs.com/package/jsend) : Middleware for response.
 - [JsonWebToken](https://github.com/auth0/node-jsonwebtoken) : Implementing JWT for Auth.
-- [dotenv](https://www.npmjs.com/package/dotenv) : loading environment variables
+- [dotenv](https://www.npmjs.com/package/dotenv) : loading environment variables-
+- [validator](https://www.npmjs.com/package/validator) : used for validating data.
 
 __Dev packages:__
 
