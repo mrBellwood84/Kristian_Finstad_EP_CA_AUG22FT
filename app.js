@@ -8,7 +8,8 @@ const logger = require('morgan');
 
 // import routes
 const indexRouter = require('./routes/index');
-const auhtRouter = require("./routes/auth");
+const authRouter = require("./routes/auth");
+const utilRouter = require("./routes/utils");
 
 // initialize database
 const db = require("./models/index")
@@ -31,6 +32,7 @@ app.use(jsend.middleware)
 
 // adding routes
 app.use('/', indexRouter);
-app.use("/", auhtRouter);
+app.use("/", authRouter);
+app.use("/", utilRouter);
 
 module.exports = app;

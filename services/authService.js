@@ -55,17 +55,18 @@ class AuthService {
     }
 
     /**
-     * Get id of Role entity with role set as "User".
+     *  Get Role id. Primary for User role (default value).
      * 
-     * @returns {number}
+     * @param {string} role default "User"
+     * @returns {number} role entity id
      */
-    async #getUserRoleId() {
-        const [ role, _ ] = await this.#Role.findOrCreate({where: {role: "User" }});
-        return role.id;
+    async #getRoleId(role = "User") {
+        const [ r, _ ] = await this.#Role.findOrCreate({where: { role }});
+        return r.id;
     }
 
     /**
-     *  Get set role from role entity queried by id.
+     *  Get role from role entity queried by id.
      * 
      * @param {number} id 
      * @returns {string} role
@@ -131,7 +132,7 @@ class AuthService {
      * @param {string} email 
      * @param {string} password 
      */
-    async signup(username, email, password) {
+    async signup(username, email, password, roleId = undefined) {
 
         if (Boolean(await this.#getUserByUserName(username))) throw new UserExistError();
         if (await this.#getEmailCount(email) >= 4) throw new UserEmailMaxError();
@@ -144,8 +145,16 @@ class AuthService {
             UserEmailId: await this.#getEmailId(email),
             encryptedPassword,
             salt,
-            RoleId: await this.#getUserRoleId(),
+            RoleId: roleId ?? await this.#getRoleId(),
         });
+    }
+
+    async createAdmin() {
+        const roleId = await this.#getRoleId("Admin");
+        const userName = "Admin";
+        const password = "P@ssword2023";
+        const email = "admin@admin.app";
+        await this.signup(userName,email,password, roleId);
     }
 
     /**
