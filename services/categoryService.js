@@ -69,7 +69,7 @@ class CategoryService {
         if (!entity) throw new NotFoundError("Category does not exist!")
 
         // throw an easter egg if new name match the old name
-        if (entity.name === nameNorm) throw new HappyEasterError("An error did not occured when changing the existing category name with with the existing category name.")
+        if (entity.name === nameNorm) throw new HappyEasterError("The API states that it is not acceptable to replace the existing name with the existing name")
         
         // throw entity exist error if category exist in database
         const otherExist = await this.#categoryExist(name);

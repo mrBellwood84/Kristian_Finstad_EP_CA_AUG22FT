@@ -52,7 +52,7 @@ router.put("/:id", isAdmin, async (req, res, next) => {
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         if (ex instanceof EntityExistError) return res.status(400).jsend.fail(ex.message);
-        if (ex instanceof HappyEasterError) return res.status(202).jsend.success(ex.message);
+        if (ex instanceof HappyEasterError) return res.status(406).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
 
