@@ -11,7 +11,6 @@ const createItemModel = (sequelize) => {
         item_name: {
             type: DataTypes.STRING,
             allowNull: false,
-            unique: true,
         },
         img_url: {
             type: DataTypes.STRING,
@@ -24,7 +23,6 @@ const createItemModel = (sequelize) => {
         price: {
             type: DataTypes.FLOAT,
             allowNull: false,
-            defaultValue: 0,
         },
         stock_quantity: {
             type: DataTypes.INTEGER,
@@ -39,7 +37,8 @@ const createItemModel = (sequelize) => {
         Item.hasMany(models.CartItem);
         Item.hasMany(models.OrderItem);
         Item.belongsTo(models.Category, {
-            onDelete: "RESTRICT"
+            onDelete: "RESTRICT",
+            as: "category"
         });
     }
 
