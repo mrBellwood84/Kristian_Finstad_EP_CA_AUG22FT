@@ -9,6 +9,8 @@ const logger = require('morgan');
 // import routes
 const indexRouter = require('./routes/index');
 const authRouter = require("./routes/auth");
+const itemsRouter = require("./routes/items");
+const categoryRouter = require("./routes/categories");
 const utilRouter = require("./routes/utils");
 
 // initialize database
@@ -33,6 +35,9 @@ app.use(jsend.middleware)
 // adding routes
 app.use('/', indexRouter);
 app.use("/", authRouter);
+app.use("/items", itemsRouter);
+app.use("/categories", categoryRouter);
+
 app.use("/", utilRouter);
 
 module.exports = app;

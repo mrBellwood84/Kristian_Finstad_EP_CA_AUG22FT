@@ -38,7 +38,9 @@ const createItemModel = (sequelize) => {
     Item.associate = (models) => {
         Item.hasMany(models.CartItem);
         Item.hasMany(models.OrderItem);
-        Item.belongsTo(models.Category);
+        Item.belongsTo(models.Category, {
+            onDelete: "RESTRICT"
+        });
     }
 
     return Item;
