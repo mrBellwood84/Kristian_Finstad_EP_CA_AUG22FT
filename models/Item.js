@@ -8,11 +8,11 @@ const { Sequelize, DataTypes } = require("sequelize")
 const createItemModel = (sequelize) => {
 
     const Item = sequelize.define("Item", {
-        item_name: {
+        itemName: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        img_url: {
+        imageUrl: {
             type: DataTypes.STRING,
         },
         sku: {
@@ -24,7 +24,7 @@ const createItemModel = (sequelize) => {
             type: DataTypes.FLOAT,
             allowNull: false,
         },
-        stock_quantity: {
+        stockQuantity: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0,
@@ -37,8 +37,8 @@ const createItemModel = (sequelize) => {
         Item.hasMany(models.CartItem);
         Item.hasMany(models.OrderItem);
         Item.belongsTo(models.Category, {
-            onDelete: "RESTRICT",
-            as: "category"
+            as: "category",
+            onDelete: "RESTRICT"
         });
     }
 

@@ -1,15 +1,19 @@
+const { QueryTypes } = require("sequelize");
 const { EntityExistError, NotFoundError, HappyEasterError } = require("../errors/dataErrors");
 
 class CategoryService {
     
+    #sequelize
     #Category
 
     constructor(db) {
+        this.#sequelize = db.sequelize;
         this.#Category = db.Category;
     }
 
     /**
      *  Method for capitalizing strings.
+     *  Created to ensurce all categories have same format
      * 
      * @param {string} name 
      * @returns {string} capitalized string
@@ -25,8 +29,22 @@ class CategoryService {
      * @returns {boolean}
      */
     async #categoryExist(name) {
-        const result = await this.#Category.findAndCountAll({ where: { name }});
-        return result.count > 0;
+        const res = await this.#sequelize.query("select count(id) as c from categories where name = ?", {
+            replacements: [name],
+            type: QueryTypes.SELECT,
+        });
+        console.log("DEV :: check category exists", res)
+        return res[0].c > 0;
+    }
+
+    async #hasDependentItems(id) {
+        const res = await this.#sequelize.query("select count(id) as c from items where categoryId = ?", {
+            replacements: [ id ],
+            type: QueryTypes.SELECT,
+        });
+        console.log(res);
+
+        return res[0].c > 0;
     }
 
     /** A simple get all query */
@@ -35,6 +53,8 @@ class CategoryService {
     }
 
     /**
+     * Create new category from provided name.
+     * Throws Entity exist error if category name exists
      * 
      * @param {string} name 
      */
@@ -86,6 +106,8 @@ class CategoryService {
     async delete(id) {
         const entity = await this.#Category.findOne({where: { id }})
         if (!entity) throw new NotFoundError("Category does not exist!")
+        if (await this.#hasDependentItems(id)) throw new EntityExistError("Can not delete category with dependent item");
+        
         await entity.destroy();
     }
 }

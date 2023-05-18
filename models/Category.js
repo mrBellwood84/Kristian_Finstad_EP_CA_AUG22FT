@@ -17,10 +17,6 @@ const createCategoryModel = (sequelize) => {
         timestamps: false,
     });
 
-    Category.associate = (models) => {
-        Category.hasMany(models.Item);
-    }
-
     return Category;
 }
 

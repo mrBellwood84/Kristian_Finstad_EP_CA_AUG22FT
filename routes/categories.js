@@ -49,14 +49,13 @@ router.put("/:id", isAdmin, async (req, res, next) => {
 
     try {
         await categoryService.update(id, name);
+        return res.jsend.success({message: "Category was updated"});
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         if (ex instanceof EntityExistError) return res.status(400).jsend.fail(ex.message);
         if (ex instanceof HappyEasterError) return res.status(406).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
-
-    return res.jsend.success({message: "Category was updated"});
 });
 
 // delete category admin only
@@ -69,6 +68,7 @@ router.delete("/:id", isAdmin, async (req, res, next) => {
         return res.jsend.success({message: "Category was deleted"});
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        if (ex instanceof EntityExistError) return res.status(400).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message)
     }
 });
