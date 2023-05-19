@@ -35,8 +35,8 @@ app.use(jsend.middleware)
 // adding routes
 app.use('/', indexRouter);
 app.use("/", authRouter);
-app.use("/items", itemsRouter);
-app.use("/categories", categoryRouter);
+app.use("/", itemsRouter);
+app.use("/", categoryRouter);
 
 app.use("/", utilRouter);
 

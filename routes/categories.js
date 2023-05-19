@@ -12,7 +12,7 @@ const categoryService = new CategoryService(db);
 const isAdmin = require("../middleware/validateTokenAdmin");
 
 // open endpoint for getting all categories
-router.get("/", async (req, res, next) => {
+router.get("/categories", async (req, res, next) => {
     try {
         const categories = await categoryService.getAll();
         return res.jsend.success(categories)
@@ -22,7 +22,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // post new category, admin only
-router.post("/", isAdmin, async (req, res, next) => {
+router.post("/category", isAdmin, async (req, res, next) => {
 
     const { name } = req.body;
 
@@ -38,7 +38,7 @@ router.post("/", isAdmin, async (req, res, next) => {
 });
 
 // update category, admin only
-router.put("/:id", isAdmin, async (req, res, next) => {
+router.put("/category/:id", isAdmin, async (req, res, next) => {
 
     // get request variables
     const id = req.params.id;
@@ -59,7 +59,7 @@ router.put("/:id", isAdmin, async (req, res, next) => {
 });
 
 // delete category admin only
-router.delete("/:id", isAdmin, async (req, res, next) => {
+router.delete("/category/:id", isAdmin, async (req, res, next) => {
 
     const id = req.params.id;
 

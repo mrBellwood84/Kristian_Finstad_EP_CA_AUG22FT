@@ -13,7 +13,7 @@ const { validateOnCreate, validateOnUpdate,  } = require("../middleware/validate
 const isAdmin = require("../middleware/validateTokenAdmin");
 
 // get request for all data
-router.get("/", async (req, res, next) => {
+router.get("/items", async (req, res, next) => {
     try {
         const result = await itemService.getAll();
         return res.jsend.success(result);
@@ -23,7 +23,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // create new item
-router.post("/", validateOnCreate, isAdmin, async (req, res, next) => {
+router.post("/item", validateOnCreate, isAdmin, async (req, res, next) => {
 
     // destruct requesat body
     const { body } = req;
@@ -39,7 +39,7 @@ router.post("/", validateOnCreate, isAdmin, async (req, res, next) => {
 });
 
 // update from 
-router.put("/:id", validateOnUpdate, isAdmin, async (req, res, next) => {
+router.put("/item/:id", validateOnUpdate, isAdmin, async (req, res, next) => {
     
     const id = req.params.id;
     const { body } = req
@@ -55,7 +55,7 @@ router.put("/:id", validateOnUpdate, isAdmin, async (req, res, next) => {
 
 });
 
-router.delete("/:id", isAdmin, async (req, res, next) => {
+router.delete("/item/:id", isAdmin, async (req, res, next) => {
     const id = req.params.id;
 
     try {
