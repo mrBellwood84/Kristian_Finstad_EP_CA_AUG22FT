@@ -12,8 +12,14 @@ const createCartModel = (sequelize) => {
     })
 
     Cart.associate = (models) => {
-        Cart.hasMany(models.CartItem);
-        Cart.belongsTo(models.User);
+        Cart.belongsTo(models.User, {
+            as: "user",
+            onDelete: "CASCADE"
+        });
+        Cart.hasMany(models.CartItem, {
+            as: "cartItems",
+            foreignKey: "cartId"
+        })
     }
     return Cart;
 }

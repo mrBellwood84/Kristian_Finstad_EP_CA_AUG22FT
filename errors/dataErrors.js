@@ -12,6 +12,13 @@ class EntityExistError extends Error {
     }
 }
 
+class OutOfStockError extends Error {
+    constructor(message) {
+        super();
+        this.message = message ?? "Item out of stock";
+    }
+}
+
 class HappyEasterError extends Error {
     constructor(message) {
         super();
@@ -23,4 +30,5 @@ module.exports = {
     NotFoundError,
     EntityExistError,
     HappyEasterError,
+    OutOfStockError,
 }

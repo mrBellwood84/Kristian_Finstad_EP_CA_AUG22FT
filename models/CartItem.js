@@ -11,14 +11,24 @@ const createCartItemModel = (sequelize) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        price: {
+            type: DataTypes.DOUBLE,
+            allowNull: false,
+        }
     },
     {
         timestamps: true,
     });
 
     CartItem.associate = (models) => {
-        CartItem.belongsTo(models.Item);
-        CartItem.belongsTo(models.Cart);
+        CartItem.belongsTo(models.Item, {
+            as: "item",
+            onDelete: "CASCADE",
+        });
+        CartItem.belongsTo(models.Cart, {
+            as: "cart",
+            onDelete: "CASCADE",
+        });
     }
     return CartItem;
 }
