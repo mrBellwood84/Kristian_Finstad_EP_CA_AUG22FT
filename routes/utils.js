@@ -23,6 +23,10 @@ router.post("/setup", async (req, res, next) => {
     if (!adminExist) await authService.createAdmin();
     report["adminAccount"] = adminExist ? "Admin account exist" : "Admin account was created";
 
+    // get data from noroff api
+    await utilService.populateDb();
+    report["data"] = "Data fetched from Noroff API";
+
     // return util report
     return res.jsend.success(report)
 })
