@@ -17,14 +17,19 @@ router.get("/cart", validUser, async (req, res, next) => {
         const result = await cartService.getUserCart(userId)
         return res.jsend.success({cart: result});
     } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message)
         return res.status(500).jsend.error(ex.message)
     }
 });
 
 router.get("/allcarts", isAdmin, async (req, res, next) => {
     
-    const result = await cartService.getAllUserCarts();
-    return res.jsend.success(result)
+    try {
+        const result = await cartService.getAllUserCarts();
+        return res.jsend.success(result);
+    } catch (ex) {
+        return res.status(500).jsend.error(ex.message);
+    }
 });
 
 // add existing items to user cart
@@ -46,7 +51,7 @@ router.post("/cart_item", validUser, async (req, res, next) => {
         return res.jsend.success({message: "Item(s) added to cart"});
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
-        if (ex instanceof EntityExistError) return res.status(404).jsend.fail(ex.message);
+        if (ex instanceof EntityExistError) return res.status(400).jsend.fail(ex.message);
         if (ex instanceof OutOfStockError) return res.status(400).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message)
     }
@@ -70,14 +75,13 @@ router.put("/cart_item/:id", validUser, async (req, res, next) => {
 
     try {
         await cartService.updateCartItem(userId, cartItemId, amount);
+        return res.jsend.success({message: "Cart Item was updated"});
 
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         if (ex instanceof OutOfStockError) return res.status(400).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
-
-    return res.end();
 });
 
 // removes cart item from cart by provided id
@@ -108,7 +112,7 @@ router.delete("/cart/:id", validUser, async (req, res, next) => {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
-})
+});
 
 
 
