@@ -66,7 +66,6 @@ class UtilService {
      */
     async populateDb() {
         const data  = await this.#getInitialData();
-        console.log(`DEV :: Data recived -- ${data.length} items fetched`);
 
         // create a mapped array for bulk import
         const mapped = []
@@ -85,13 +84,9 @@ class UtilService {
             mapped.push(item)
         };
 
-        let res = 0
         for (const d of mapped) {
-            res += await this.#createItemEntity(d);
+            await this.#createItemEntity(d);
         }
-
-        console.log("DEV :: New items created: ", res)
-
     }
 
     /** finds or create category entity, always return category id */
@@ -103,13 +98,11 @@ class UtilService {
 
         if (queryResult.length > 0) {
             const id = queryResult[0].id;
-            console.log("DEV :: Id found: " + queryResult[0].id)
             return id;
         }
 
         const newEntity = await this.#Category.create({name: category});
         const id = newEntity.id;
-        console.log("DEV :: new entity was created with id: ", id)
         return id;
     }
 
@@ -120,12 +113,10 @@ class UtilService {
             type: QueryTypes.SELECT
         });
         const exist = res[0].c > 0;
-        if (exist) return 0
+        if (exist) return
 
         await this.#Item.create(item);
-        return 1
     }
 }
-
 
 module.exports = UtilService;

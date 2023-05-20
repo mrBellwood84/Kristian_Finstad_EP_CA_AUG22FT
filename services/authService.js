@@ -128,11 +128,13 @@ class AuthService {
      *  Throws an error if any application rules for creating an user account is broken.
      *  If no errors are thrown, an user account was created.
      * 
+     * @param {string} firstName
+     * @param {string} lastName
      * @param {string} username 
      * @param {string} email 
      * @param {string} password 
      */
-    async signup(username, email, password, roleId = undefined) {
+    async signup(firstName, lastName, username, email, password, roleId = undefined) {
 
         if (Boolean(await this.#getUserByUserName(username))) throw new UserExistError();
         if (await this.#getEmailCount(email) >= 4) throw new UserEmailMaxError();
@@ -141,6 +143,8 @@ class AuthService {
         const encryptedPassword = this.#encryptPassword(password, salt);
 
         await this.#User.create({
+            firstName,
+            lastName,
             username,
             UserEmailId: await this.#getEmailId(email),
             encryptedPassword,
@@ -151,10 +155,12 @@ class AuthService {
 
     async createAdmin() {
         const roleId = await this.#getRoleId("Admin");
+        const firstName = "admin";
+        const lastName = "admin";
         const userName = "Admin";
         const password = "P@ssword2023";
         const email = "admin@admin.app";
-        await this.signup(userName,email,password, roleId);
+        await this.signup(firstName, lastName, userName,email,password, roleId);
     }
 
     /**

@@ -22,7 +22,9 @@ router.get("/cart", validUser, async (req, res, next) => {
 });
 
 router.get("/allcarts", isAdmin, async (req, res, next) => {
-    return res.jsend.success("endpoint exist")
+    
+    const result = await cartService.getAllUserCarts();
+    return res.jsend.success(result)
 });
 
 // add existing items to user cart
@@ -50,6 +52,7 @@ router.post("/cart_item", validUser, async (req, res, next) => {
     }
 });
 
+// update existing cart item
 router.put("/cart_item/:id", validUser, async (req, res, next) => {
     
     // get values from request
@@ -77,9 +80,36 @@ router.put("/cart_item/:id", validUser, async (req, res, next) => {
     return res.end();
 });
 
-router.delete("/cart_item", validUser, async (req, res, next) => {
-    return res.jsend.success("Endpoint exists")
+// removes cart item from cart by provided id
+router.delete("/cart_item/:id", validUser, async (req, res, next) => {
+
+    const userId = req.token.id;
+    const cartItemId = req.params.id;
+
+    try {
+        await cartService.deleteSingleCartItem(userId, cartItemId);
+        return res.jsend.success({message: "Item was removed from cart"})
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message);
+    }
 });
+
+// deletes all items from cart
+router.delete("/cart/:id", validUser, async (req, res, next) => {
+
+    const userId = req.token.id;
+    const cartId = req.params.id;
+
+    try {
+        await cartService.deleteAllCartItems(userId, cartId);
+        return res.jsend.success({message: "All items in cart was removed"})
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message);
+    }
+})
+
 
 
 module.exports = router;

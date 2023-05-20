@@ -37,10 +37,12 @@ router.post("/login", async (req, res, next) => {
 router.post("/signup", async (req, res, next) => {
 
     // get values from request body
-    const { username, email, password} = req.body;
+    const { firstName, lastName, username, email, password} = req.body;
 
     // return failed if any values are missing
     const missingRequired = {};
+    if (!firstName) missingRequired["firstName"] = "First name is required!";
+    if (!lastName) missingRequired["lastName"] = "Last name is required!"
     if (!username) missingRequired["username"] = "Username is required!";
     if (!email) missingRequired["email"] = "Email is required!";
     if (email && !(validator.isEmail(email))) missingRequired["email"] = `${email} is not a valid email address!`;
@@ -50,7 +52,7 @@ router.post("/signup", async (req, res, next) => {
     // try creating a new user from provided values
     // handle errors if raised by service method
     try {
-        await authService.signup(username, email, password);
+        await authService.signup(firstName, lastName, username, email, password);
         return res.jsend.success({message: "You have created an account"})
     } catch (ex) {
         if (ex instanceof UserExistError || ex instanceof UserEmailMaxError) 

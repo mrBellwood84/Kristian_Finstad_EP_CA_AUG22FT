@@ -18,6 +18,8 @@ class CartService {
         this.#Category = db.Category
     }
 
+
+    /** raw query to check if item exist in user cart */
     async #checkUserCartItemExist(cartId, itemId) {
         const res = await this.#sequelize.query("select count(id) as c from cartItems where cartId = ? and itemId = ?", {
             replacements: [ cartId, itemId],
@@ -27,8 +29,8 @@ class CartService {
         return res[0].c > 0;
     }
 
-    async #checkCartBelongToUser(userId, cartItemId) {
-
+    /** raw query to check if provided cart item belongs to provided user */
+    async #checkCartItemBelongToUser(userId, cartItemId) {
 
         const query = "select count(*) as c from carts join cartItems as c_item where carts.userId = ? and c_item.cartId = carts.id and c_item.id = ?;"
         const result = await this.#sequelize.query(query, {
@@ -78,7 +80,41 @@ class CartService {
     }
 
     async getAllUserCarts() {
-        // use raw sql query
+        const query = ` 
+        SELECT
+            cart.id AS cartId, cart.createdAt AS created, cart.updatedAt AS updated,
+            c_item.id AS "cartItem.id", c_item.amount AS "cartItem.amount", c_item.price AS "cartItem.price", 
+            c_item.createdAt AS "cartItem.created", c_item.updatedAt AS "cartItem.updated",
+            item.id AS "cartItem.item.id", item.itemName AS "cartItem.item.itemName", item.imageUrl AS "cartItem.item.imageUrl",
+            item.sku AS "cartItem.item.sku", item.price AS "cartItem.item.price", item.stockQuantity AS "cartItem.item.stockQuantity",
+            cat.name AS "cartItem.item.category",
+            user.id AS "user.id", (SELECT concat(user.firstName, " ", user.lastName)) AS "user.fullName"
+        FROM carts AS cart
+            INNER JOIN users AS user ON cart.userid = user.id
+            INNER JOIN cartitems AS c_item ON c_item.cartid = cart.id
+            INNER JOIN items AS item ON c_item.itemid = item.id
+            INNER JOIN categories AS cat ON item.categoryid = cat.id
+            ORDER BY cartId; `
+
+        const rawResult = await this.#sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            nest: true
+        })
+        
+        const remapped = []
+
+        rawResult.forEach(cart => {
+            const index = remapped.findIndex(x => x.cartId === cart.cartId)
+            if (index < 0) {
+                cart.cartItems = [cart.cartItem]
+                delete cart.cartItem;
+                remapped.push(cart);
+                return;
+            }
+            remapped[index].cartItems.push(cart.cartItem);
+        });
+
+        return remapped
     }
 
     /**
@@ -133,7 +169,7 @@ class CartService {
      */
     async updateCartItem(userId, cartItemId, amount) {
         // quickcheck if cart belong to user
-        const cartItemExist = await this.#checkCartBelongToUser(userId, cartItemId)
+        const cartItemExist = await this.#checkCartItemBelongToUser(userId, cartItemId)
         if (!cartItemExist) throw new NotFoundError("Cart item ID provided does not exist for registered user!");
 
         // get cartitem and item and check if item not out of stock
@@ -148,8 +184,36 @@ class CartService {
         await cartItem.save();
     }
 
-    async deleteCartItem() {
-        
+    /**
+     * Removes a single item from user chart.
+     * Throws error if provided item does not exist or do not belong to user.
+     * 
+     * @param {string | number} userId 
+     * @param {string | number} cartItemId 
+     */
+    async deleteSingleCartItem(userId, cartItemId) {
+
+        const cartItemExists = await this.#checkCartItemBelongToUser(userId, cartItemId);
+        if (!cartItemExists) throw new NotFoundError("Cart item ID provided does not exist for registered user!");
+
+        const cartItem = await this.#CartItem.findOne({where: { id: cartItemId }});
+        await cartItem.destroy();
+    }
+
+    /**
+     * Removes all items from user cart, cart will not be removed from db.
+     * 
+     *  Throws error if cart does not exist or not belong to user.
+     * 
+     * @param {string | number} userId 
+     * @param {string | number} cartId 
+     */
+    async deleteAllCartItems(userId, cartId) {
+        const cart = await this.#Cart.findOne({where: {id: cartId, userId}});
+        if (!cart) throw new NotFoundError("Cart ID provided does not exists for registered user!");
+
+        const items = await this.#CartItem.findAll({where: { cartId }});
+        items.forEach(async item => await item.destroy());
     }
 }
 

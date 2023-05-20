@@ -33,7 +33,6 @@ class CategoryService {
             replacements: [name],
             type: QueryTypes.SELECT,
         });
-        console.log("DEV :: check category exists", res)
         return res[0].c > 0;
     }
 
@@ -42,7 +41,6 @@ class CategoryService {
             replacements: [ id ],
             type: QueryTypes.SELECT,
         });
-        console.log(res);
 
         return res[0].c > 0;
     }
