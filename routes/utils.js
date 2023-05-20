@@ -2,7 +2,7 @@ const router = require("express").Router();
 
 // get database and services
 const db = require("../models/index");
-const UtilService = require("../services/UtilService");
+const UtilService = require("../services/utilService");
 const AuthService = require("../services/authService");
 const utilService = new UtilService(db);
 const authService = new AuthService(db);
