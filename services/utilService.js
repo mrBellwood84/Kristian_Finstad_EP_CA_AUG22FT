@@ -7,10 +7,11 @@ const { where, QueryTypes } = require("sequelize");
 
 class UtilService {
 
-    #sequelize
-    #Role
-    #Category
-    #Item
+    #sequelize;
+    #Role;
+    #Category;
+    #Item;
+    #OrderStatus;
 
     /**
      * 
@@ -19,8 +20,9 @@ class UtilService {
     constructor (db) {
         this.#sequelize = db.sequelize
         this.#Role = db.Role;
-        this.#Category = db.Category
-        this.#Item = db.Item
+        this.#Category = db.Category;
+        this.#Item = db.Item;
+        this.#OrderStatus = db.OrderStatus
     }
 
     /**
@@ -36,6 +38,18 @@ class UtilService {
             adminRole: adminAdded ? "Admin added as User Role" : "Admin exist as User Role",
             userRole: userAdded ? "User added as User Role" : "User exist as User Role",
         };
+    }
+
+    async addOrderStatus() {
+        const [, completeAdded ] = await this.#OrderStatus.findOrCreate({ where: { status: "COMPLETE" }});
+        const [, inProcessAdded ] = await this.#OrderStatus.findOrCreate({where: { status: "IN PROCESS" }});
+        const [, cancelledAdded ] = await this.#OrderStatus.findOrCreate({where: { status: "CANCELLED" }});
+
+        return {
+            completeStatus: completeAdded ? "Order status COMPLETE was added" : "Order status COMPLETE exists",
+            inprocessStatus: inProcessAdded ? "Order status IN PROCESS was added" : "Order status IN PROCESS exists",
+            candelledStatus: cancelledAdded ? "Order status CANCELLED was added" : "Order status CANCELLED exists",
+        }
     }
 
     /**
@@ -67,6 +81,11 @@ class UtilService {
     async populateDb() {
         const data  = await this.#getInitialData();
 
+        const report = {
+            categoryAdded: 0,
+            itemAdded: 0,
+        }
+
         // create a mapped array for bulk import
         const mapped = []
 
@@ -79,18 +98,24 @@ class UtilService {
                 sku: d.sku,
                 price: d.price,
                 stockQuantity: d.stock_quantity,
-                categoryId: await this.#findOrCreateCategory(d.category)       
+                categoryId: await this.#findOrCreateCategory(d.category, report)       
             }
             mapped.push(item)
         };
 
-        for (const d of mapped) {
-            await this.#createItemEntity(d);
+        for (const item of mapped) {
+            await this.#createItemEntity(item, report);
+        }
+
+        return {
+            message: "Seed data fetched from external api",
+            category: report.categoryAdded > 0 ? `${report.categoryAdded} categories were added` : "No new categories were added",
+            items: report.itemAdded > 0 ? `${report.itemAdded} items were added` : "No new items were added",
         }
     }
 
     /** finds or create category entity, always return category id */
-    async #findOrCreateCategory(category) {
+    async #findOrCreateCategory(category, report) {
 
         const queryResult = await this.#sequelize.query("select id from categories where name = ?", {
             replacements: [ category ], type: QueryTypes.SELECT,
@@ -101,20 +126,23 @@ class UtilService {
             return id;
         }
 
+        report.categoryAdded++;
         const newEntity = await this.#Category.create({name: category});
         const id = newEntity.id;
         return id;
     }
 
     /** check if entity exists, insert item if not */
-    async #createItemEntity(item) {
+    async #createItemEntity(item, report) {
         const res = await this.#sequelize.query("select count(*) as c from items where id = ?", {
             replacements: [ item.id ],
             type: QueryTypes.SELECT
         });
+
         const exist = res[0].c > 0;
         if (exist) return
 
+        report.itemAdded++;
         await this.#Item.create(item);
     }
 }

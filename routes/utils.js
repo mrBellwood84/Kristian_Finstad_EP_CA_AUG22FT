@@ -10,25 +10,32 @@ const authService = new AuthService(db);
 
 router.post("/setup", async (req, res, next) => {
 
-    const report = {
-        message: "Setup was run for API"
+    try {
+        const report = {
+            message: "Setup was run for API"
+        }
+
+        // check / add user roles
+        const roles = await utilService.addRoles();
+        report["userRoles"] = roles;
+
+        const orderStatus = await utilService.addOrderStatus();
+        report["orderStatus"] = orderStatus;
+
+        // check admin exist, create if not
+        const adminExist = await utilService.checkAdminExist();
+        if (!adminExist) await authService.createAdmin();
+        report["adminAccount"] = adminExist ? "Admin account exist" : "Admin account was created";
+
+        // get data from noroff api
+        const apiCallResult = await utilService.populateDb();
+        report["apiCall"] = apiCallResult;
+
+        // return util report
+        return res.jsend.success(report)
+    } catch (ex) {
+        return res.jsend.error(ex.message);
     }
-
-    // check / add user roles
-    const roles = await utilService.addRoles();
-    Object.keys(roles).forEach(k => report[k] = roles[k]);
-
-    // check admin exist, create if not
-    const adminExist = await utilService.checkAdminExist();
-    if (!adminExist) await authService.createAdmin();
-    report["adminAccount"] = adminExist ? "Admin account exist" : "Admin account was created";
-
-    // get data from noroff api
-    await utilService.populateDb();
-    report["data"] = "Data fetched from Noroff API";
-
-    // return util report
-    return res.jsend.success(report)
 })
 
 router.post("/search", async (req, res, next) => {
