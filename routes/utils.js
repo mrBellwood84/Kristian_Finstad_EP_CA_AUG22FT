@@ -4,6 +4,7 @@ const router = require("express").Router();
 const db = require("../models/index");
 const UtilService = require("../services/utilService");
 const AuthService = require("../services/authService");
+const { NotFoundError } = require("../errors/dataErrors");
 const utilService = new UtilService(db);
 const authService = new AuthService(db);
 
@@ -39,7 +40,16 @@ router.post("/setup", async (req, res, next) => {
 })
 
 router.post("/search", async (req, res, next) => {
-    return res.jsend.success({message: "DEV :: reach enpoint is alive"})
+
+    const { itemName, category, sku } = req.body;
+    
+    try {
+        const result = await utilService.searchItem(itemName, category, sku)
+        return res.jsend.success(result);
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message)
+    }
 })
 
 

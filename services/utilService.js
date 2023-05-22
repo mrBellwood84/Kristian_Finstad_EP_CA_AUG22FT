@@ -2,8 +2,8 @@
  * Contain database connections and business logic for utility endpoints.
  */
 
-const { response, query } = require("express");
-const { where, QueryTypes } = require("sequelize");
+const { Op, QueryTypes } = require("sequelize");
+const { NotFoundError } = require("../errors/dataErrors");
 
 class UtilService {
 
@@ -144,6 +144,113 @@ class UtilService {
 
         report.itemAdded++;
         await this.#Item.create(item);
+    }
+
+    /**
+     *  Master method for search.
+     *  Select search method from provided variables
+     * 
+     * @param {string | undefined} partialItemName 
+     * @param {string | undefined} categoryName 
+     * @param {string | undefined} sku 
+     * 
+     * @returns {Array}
+     */
+    async searchItem(partialItemName, categoryName, sku) {
+
+        if (sku) return await this.#searchBySku(sku);
+        if (!partialItemName && categoryName) return await this.#searchByCategoryOnly(categoryName)
+        if (partialItemName && !categoryName) return await this.#searchByPartialItemName(partialItemName);
+        if (partialItemName && categoryName) return await this.#searchByCategoryAndPartialName(partialItemName, categoryName)
+        throw new NotFoundError("No values provided, no values found...")
+    }
+
+    /**
+     * Search item by sku only
+     * 
+     * @param {string} sku 
+     * @returns 
+     */
+    async #searchBySku(sku) {
+        const result = await this.#Item.findOne({
+            where: { sku },
+            include: "category",
+            attributes: {
+                exclude: [ "categoryId" ]
+            }
+        })
+
+        if (!result) throw new NotFoundError("No items found");
+        return result;
+    };
+
+    /**
+     *  Search items by partial item name
+     * 
+     * @param {string} partialItemName 
+     * @returns 
+     */
+    async #searchByPartialItemName(partialItemName) {
+        const result = await this.#Item.findAll({
+            where: {
+                itemName: {
+                    [Op.like]: `%${partialItemName}%`
+                }
+            },
+            include: "category",
+            attributes: {
+                exclude: ["categoryId"]
+            }
+        })
+        if (result.length === 0) throw new NotFoundError("No items found!");
+        return result
+    }
+
+    /**
+     *  Search items by categories
+     * 
+     * @param {string} categoryName 
+     * @returns 
+     */
+    async #searchByCategoryOnly(categoryName) {
+
+        const category = await this.#Category.findOne({where: { name: categoryName }});
+        if (!category) throw new NotFoundError("No item found!")
+
+        const result = await this.#Item.findAll({ 
+            where: { categoryId: category.id}, 
+            include: "category", 
+            attributes: {
+                exclude: ["categoryId"]
+            }
+        });
+        
+        if (result.length === 0) throw new NotFoundError("No items found!");        
+        return result;
+    }
+
+    /**
+     * Search items category and partial item name
+     * 
+     * @param {string} partialItemName 
+     * @param {string} categoryName 
+     * @returns 
+     */
+    async #searchByCategoryAndPartialName(partialItemName, categoryName) {
+        const category = await this.#Category.findOne({where: { name: categoryName }})
+        if (!category) throw new NotFoundError("No items found");
+
+        const result = await this.#Item.findAll({
+            where: {
+                itemName: {
+                    [Op.like]: `%${partialItemName}%`
+                },
+                categoryId: category.id,
+            }
+        })
+
+        if (result.length === 0) throw new NotFoundError("No items found!")
+        return result;
     }
 }
 
