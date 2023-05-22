@@ -11,16 +11,38 @@ const authAdmin = require("../middleware/validateTokenAdmin");
 
 // get requred error classes
 const { NotFoundError, OutOfStockError } = require("../errors/dataErrors");
-const { INTEGER } = require("sequelize");
 
 // get user orders
 router.get("/orders", authUser,  async (req, res, next) => {
-    return res.jsend.error("Endpoint exist, but not complete");
+
+    const userId = req.token.id;
+    const role = req.token.role;
+
+    try {
+
+        switch (role) {
+            case "Admin":
+                const adminResult = await orderService.getAllOrders();
+                return res.jsend.success(adminResult);
+            case "User":
+                const userResult = await orderService.getUserOrders(userId);
+                return res.jsend.success(userResult);
+            default:
+                throw Error("An error occured resolving user role")
+        }
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message);
+    }
 });
 
-router.get("/allorders/", authAdmin, async (req, res, next) => {
-
-    return res.jsend.error("Endpoint exist, but not complete");
+router.get("/allorders/", async (req, res, next) => {
+    try {
+        const result = await orderService.getAllOrders();
+        return res.jsend.success(result);
+    } catch (ex) {
+        return res.status(500).jsend.error(ex.message);
+    }
 });
 
 router.post("/order/:id", authUser, async (req, res, next) => {

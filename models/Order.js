@@ -11,6 +11,33 @@ const createOrderModel = (sequelize) => {
         discount: {
             type: DataTypes.INTEGER,
             defaultValue: 0,
+        },
+        priceItems: {
+            type: DataTypes.VIRTUAL,
+            get() {
+                try {
+                    const orderItemPrices = this.dataValues.orderItems.map(item => item.amount * item.unitPrice);
+                    const sum = orderItemPrices.reduce((acc, val) => acc + val, 0)
+                    return sum;
+                } catch {
+                    return undefined;
+                }
+
+            }
+        },
+        total: {
+            type: DataTypes.VIRTUAL,
+            get() {
+                try {
+                    const orderItemPrices = this.dataValues.orderItems.map(item => item.amount * item.unitPrice);
+                    const sumPrice = orderItemPrices.reduce((acc, val) => acc + val, 0)
+                    const discountSum = sumPrice / 100 * this.discount;
+                    return sumPrice - discountSum;
+                } catch {
+                    return undefined
+                }
+            }
+
         }
     },
     {

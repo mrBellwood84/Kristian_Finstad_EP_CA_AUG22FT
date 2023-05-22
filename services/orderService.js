@@ -6,17 +6,21 @@ class OrderService {
     #sequelize;
     #Cart;
     #CartItem;
+    #Category;
     #Item;
     #Order;
     #OrderItem;
+    #OrderStatus;
 
     constructor(db) {
         this.#sequelize = db.sequelize;
         this.#Cart = db.Cart;
         this.#CartItem = db.CartItem;
+        this.#Category = db.Category;
         this.#Item = db.Item;
         this.#Order = db.Order;
         this.#OrderItem = db.OrderItem;
+        this.#OrderStatus = db.OrderStatus;
     }
 
     /**
@@ -31,6 +35,14 @@ class OrderService {
             replacements:  [ cartId, userId ],
             type: QueryTypes.SELECT,
         });
+        return result[0].c > 0;
+    }
+
+    async #anyOrderExistUser(userId) {
+        const result = await this.#sequelize.query("select count(*) as c from orders where userid = ?", {
+            replacements: [ userId ],
+            type: QueryTypes.SELECT,
+        })
         return result[0].c > 0;
     }
 
@@ -74,6 +86,96 @@ class OrderService {
                 return 0;
         }
 
+    }
+
+    async getUserOrders(userId) {
+        const ordersExist = await this.#anyOrderExistUser(userId);
+        if (!ordersExist) throw NotFoundError("No order exists for user");
+
+        const orders = await this.#Order.findAll({
+            where: { userId },
+
+            include: [
+                {
+                    model: this.#OrderStatus,
+                    as: "orderStatus",
+                    attributes: {
+                        exclude: [ "id" ]
+                    }
+                },
+                {
+                    model: this.#OrderItem,
+                    as: "orderItems",
+                    attributes: {
+                        exclude: ["createdAt", "updatedAt", "orderId", "itemId"]
+                    },
+                    include: {
+                        model: this.#Item,
+                        as: "item",
+                        attributes: {
+                            exclude: ["createdAt", "updatedAt", "price", "stockQuantity","categoryId"]
+                        },
+                        include: {
+                            model: this.#Category,
+                            as: "category",
+                            attributes: {
+                                exclude: ["id"]
+                            }
+                        }
+                    }
+                }
+            ],
+            attributes: {
+                include: [["id", "orderId"], ["createdAt", "created"], ["updatedAt", "updated"], "discount"],
+                exclude: ["id", "orderStatusId", "createdAt", "updatedAt"],
+            }
+        })
+
+
+
+        return orders;
+    }
+
+    async getAllOrders() {
+        const query = `
+        SELECT
+            users.id AS "user.id", (SELECT concat(firstName, " ", lastName) FROM users WHERE users.id = ord.userId) AS "user.fullName",
+            ord.id AS "id", ord.userId AS "userId", ord.createdAt AS "created", ord.updatedat AS "updated", 
+            (SELECT sum(orderItems.amount * orderItems.unitPrice) FROM orderItems JOIN orders ON orderItems.orderId = orders.id AND orders.userId = ord.userId) AS "priceItems",
+            ord.discount AS "discount", 
+            ((SELECT sum(orderItems.amount * orderItems.unitPrice) FROM orderItems JOIN orders ON orderItems.orderId = orders.id AND orders.userId = ord.userId) -
+            ((SELECT sum(orderItems.amount * orderItems.unitPrice) FROM orderItems JOIN orders ON orderItems.orderId = orders.id AND orders.userId = ord.userId) / 100 * ord.discount)) AS "total",
+            stat.status AS "status",
+            o_item.id AS "orderItem.id", o_item.amount AS "orderItem.amount", o_item.unitPrice AS "orderItem.unitPrice", (o_item.amount * o_item.unitprice) AS "orderItem.sumPrice",
+            item.id AS "orderItem.item.id", item.itemName AS "orderItem.item.name", item.imageUrl AS "orderItem.item.imageUrl", item.sku AS "orderItem.item.sku", cat.name AS "orderItem.item.category"
+        FROM orders AS ord
+            INNER JOIN orderitems AS o_item ON o_item.orderId = ord.id
+            INNER JOIN items AS item ON item.id = o_item.itemid
+            INNER JOIN categories AS cat ON item.categoryid = cat.id
+            INNER JOIN orderstatuses AS stat ON ord.orderStatusId = stat.id
+            INNER JOIN users ON ord.id = users.id;`
+
+        const rawResult = await this.#sequelize.query(query, {
+            type: QueryTypes.SELECT,
+            nest: true,
+        });
+
+        const remapped = [];
+
+        console.log(rawResult)
+
+        rawResult.forEach(order => {
+            const index = remapped.findIndex(x => x.id === order.id);
+            if (index < 0) {
+                order.orderItems = [ order.orderItem ]
+                delete order.orderItem
+                remapped.push(order)
+                return;
+            }
+            remapped[index].orderItems.push(order.orderItem);
+        })
+
+        return remapped;
     }
 
     /** 

@@ -15,6 +15,12 @@ const createOrderItemModel = (sequelize) => {
             type: DataTypes.DOUBLE,
             allowNull: false,
         },
+        sumPrice: {
+            type: DataTypes.VIRTUAL,
+            get() {
+                return this.amount * this.unitPrice;
+            }
+        }
     }, {
         timestamps: true,
     });
