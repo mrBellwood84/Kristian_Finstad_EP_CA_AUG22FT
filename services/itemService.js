@@ -133,8 +133,6 @@ class ItemService {
         if (stockQuantity || stockQuantity === 0) item.stockQuantity = stockQuantity;
         if (categoryId) item.categoryId = categoryId;
 
-        console.log(item)
-
         await item.save();
         if (itemNameExist) return "Item with similar name exist in database!"
     }

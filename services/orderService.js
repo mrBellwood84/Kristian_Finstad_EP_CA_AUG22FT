@@ -162,8 +162,6 @@ class OrderService {
 
         const remapped = [];
 
-        console.log(rawResult)
-
         rawResult.forEach(order => {
             const index = remapped.findIndex(x => x.id === order.id);
             if (index < 0) {
