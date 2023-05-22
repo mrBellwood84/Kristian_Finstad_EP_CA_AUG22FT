@@ -15,9 +15,6 @@ const createOrderStatusModel = (sequelize) => {
         timestamps: false,
     });
 
-    OrderStatus.associate = (models) => {
-        OrderStatus.hasMany(models.Order);
-    }
     return OrderStatus;
 }
 

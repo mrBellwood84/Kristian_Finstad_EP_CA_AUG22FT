@@ -34,7 +34,14 @@ const createItemModel = (sequelize) => {
     })
 
     Item.associate = (models) => {
-        Item.hasMany(models.OrderItem);
+        Item.hasMany(models.OrderItem, {
+            foreignKey: "itemId",
+            onDelete: "CASCADE",
+        });
+        Item.hasMany(models.CartItem, {
+            foreignKey: "itemId",
+            onDelete: "CASCADE",
+        });
         Item.belongsTo(models.Category, {
             as: "category",
             onDelete: "RESTRICT"

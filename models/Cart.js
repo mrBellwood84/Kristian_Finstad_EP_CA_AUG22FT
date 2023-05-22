@@ -18,7 +18,8 @@ const createCartModel = (sequelize) => {
         });
         Cart.hasMany(models.CartItem, {
             as: "cartItems",
-            foreignKey: "cartId"
+            foreignKey: "cartId",
+            onDelete: "CASCADE"
         })
     }
     return Cart;

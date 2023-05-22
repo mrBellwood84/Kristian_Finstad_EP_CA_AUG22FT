@@ -12,6 +12,7 @@ const authRouter = require("./routes/auth");
 const itemsRouter = require("./routes/items");
 const categoryRouter = require("./routes/categories");
 const cartRouter = require("./routes/carts")
+const orderRoute = require("./routes/orders");
 const utilRouter = require("./routes/utils");
 
 // initialize database
@@ -38,8 +39,8 @@ app.use('/', indexRouter);
 app.use("/", authRouter);
 app.use("/", itemsRouter);
 app.use("/", categoryRouter);
-app.use("/", cartRouter)
-
+app.use("/", cartRouter);
+app.use("/", orderRoute);
 app.use("/", utilRouter);
 
 module.exports = app;

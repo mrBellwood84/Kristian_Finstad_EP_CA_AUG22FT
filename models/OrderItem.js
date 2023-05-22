@@ -11,13 +11,23 @@ const createOrderItemModel = (sequelize) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        unitPrice: {
+            type: DataTypes.DOUBLE,
+            allowNull: false,
+        },
     }, {
         timestamps: true,
     });
 
     OrderItem.associate = (models) => {
-        OrderItem.belongsTo(models.Item);
-        OrderItem.belongsTo(models.Order);
+        OrderItem.belongsTo(models.Item, {
+            as: "item",
+            onDelete: "CASCADE",
+        });
+        OrderItem.belongsTo(models.Order, {
+            as: "order",
+            onDelete: "CASCADE",
+        });
     }
     return OrderItem;
 }

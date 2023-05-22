@@ -35,7 +35,6 @@ const createUserModel = (sequelize) => {
     User.associate = (models) => {
         User.belongsTo(models.UserEmail);
         User.belongsTo(models.Role);
-        User.hasMany(models.Order);
     }
     return User;
 }

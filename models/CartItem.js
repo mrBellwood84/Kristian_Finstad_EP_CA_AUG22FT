@@ -23,7 +23,7 @@ const createCartItemModel = (sequelize) => {
     CartItem.associate = (models) => {
         CartItem.belongsTo(models.Item, {
             as: "item",
-            onDelete: "CASCADE",
+            onDelete: "CASCADE"
         });
         CartItem.belongsTo(models.Cart, {
             as: "cart",
