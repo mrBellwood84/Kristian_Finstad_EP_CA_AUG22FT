@@ -10,7 +10,7 @@ const authUser = require("../middleware/validateToken");
 const authAdmin = require("../middleware/validateTokenAdmin");
 
 // get requred error classes
-const { NotFoundError, OutOfStockError } = require("../errors/dataErrors");
+const { NotFoundError, OutOfStockError, HappyEasterError } = require("../errors/dataErrors");
 
 // get user orders
 router.get("/orders", authUser,  async (req, res, next) => {
@@ -36,7 +36,7 @@ router.get("/orders", authUser,  async (req, res, next) => {
     }
 });
 
-router.get("/allorders/", async (req, res, next) => {
+router.get("/allorders/", authAdmin, async (req, res, next) => {
     try {
         const result = await orderService.getAllOrders();
         return res.jsend.success(result);
@@ -61,7 +61,21 @@ router.post("/order/:id", authUser, async (req, res, next) => {
 });
 
 router.put("/order/:id", authAdmin, async (req, res, next) => {
-    return res.jsend.error("Endpoint exists, but not complete");
+
+    const orderId = req.params.id;
+    const orderStatus = req.body.orderStatus;
+
+    if (!orderStatus) return res.status(400).jsend.fail({orderStatus: "Status is required"});
+    if (typeof orderStatus !== "string") res.status(400).jsend.fail({orderStatus: "Provided status must be a string"});
+
+    try {
+        await orderService.updateOrderStatus(orderId, orderStatus);
+        return res.jsend.success({message: "Order status was updated"});
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        if (ex instanceof HappyEasterError) return res.status(400).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message);
+    }
 })
 
 

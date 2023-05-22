@@ -1,5 +1,7 @@
 const { QueryTypes } = require("sequelize");
 const { NotFoundError, OutOfStockError } = require("../errors/dataErrors");
+const { HappyEasterError } = require("../errors/dataErrors");
+const { error } = require("jsend");
 
 class OrderService {
 
@@ -68,6 +70,12 @@ class OrderService {
         return result[0].id;
     }
 
+    /**
+     *  Calculates discount based on users having shared email account
+     * 
+     * @param {string | number} userId 
+     * @returns {number} discount value
+     */
     async #getDiscount(userId) {
         const result = await this.#sequelize.query("select count(*) as c from users where useremailid in (select useremailid from users where id = ?)", {
             replacements: [ userId ],
@@ -88,6 +96,12 @@ class OrderService {
 
     }
 
+    /**
+     *  Get users orders queried by user Id.
+     * 
+     * @param {string | number} userId 
+     * @returns {Array}
+     */
     async getUserOrders(userId) {
         const ordersExist = await this.#anyOrderExistUser(userId);
         if (!ordersExist) throw NotFoundError("No order exists for user");
@@ -136,6 +150,12 @@ class OrderService {
         return orders;
     }
 
+    /**
+     * Get all orders from all user.
+     * This method should only be accessable for authenticated admin account!
+     * 
+     * @returns {Array}
+     */
     async getAllOrders() {
         const query = `
         SELECT
@@ -255,6 +275,23 @@ class OrderService {
         await this.#CartItem.destroy({where: { cartId }});
 
 
+    }
+
+    async updateOrderStatus(id, status) {
+
+        const order = await this.#Order.findOne({where: { id }})
+        if (!order) throw new NotFoundError("Order does not exists")
+
+        let statusId;
+
+        try {
+            statusId = await this.#getOrderStatus(status)
+        } catch {
+            throw new HappyEasterError("Invalid status was provided");
+        }
+        
+        order.orderStatusId = statusId;
+        await order.save();
     }
 }
 
