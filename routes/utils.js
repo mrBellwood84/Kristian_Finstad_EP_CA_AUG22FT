@@ -35,7 +35,7 @@ router.post("/setup", async (req, res, next) => {
         // return util report
         return res.jsend.success(report)
     } catch (ex) {
-        return res.jsend.error(ex.message);
+        return res.status(500).jsend.error(ex.message);
     }
 })
 

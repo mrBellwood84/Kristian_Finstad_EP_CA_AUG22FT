@@ -11,17 +11,6 @@ class CategoryService {
         this.#Category = db.Category;
     }
 
-    /**
-     *  Method for capitalizing strings.
-     *  Created to ensurce all categories have same format
-     * 
-     * @param {string} name 
-     * @returns {string} capitalized string
-     */
-    #capitalize(name) {
-        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-    }
-
     /** 
      *  Returns boolean value for category existing in database
      * 
@@ -58,17 +47,13 @@ class CategoryService {
      */
     async create(name) {
 
-        // capitalize name
-        const nameNorm = this.#capitalize(name);
 
         // check if category exists in database, throw error if exists
         const exist = await this.#categoryExist(name)
         if (exist) throw new EntityExistError("Category already exists in database");
 
         // create new category item
-        await this.#Category.create({
-            name: nameNorm,
-        });
+        await this.#Category.create({ name });
     }
 
     /**
@@ -80,20 +65,19 @@ class CategoryService {
      */
     async update(id, name) {
 
-        const nameNorm = this.#capitalize(name);
 
         // check if entity exist
         const entity = await this.#Category.findOne({where: { id }})
         if (!entity) throw new NotFoundError("Category does not exist!")
 
         // throw an easter egg if new name match the old name
-        if (entity.name === nameNorm) throw new HappyEasterError("The API states that it is not acceptable to replace the existing name with the existing name")
+        if (entity.name === name) throw new HappyEasterError("The API states that it is not acceptable to replace the existing name with the existing name")
         
         // throw entity exist error if category exist in database
         const otherExist = await this.#categoryExist(name);
         if (otherExist) throw new EntityExistError("Category already exists in database");
 
-        await entity.update({name: nameNorm});
+        await entity.update({ name });
     }
 
     /**

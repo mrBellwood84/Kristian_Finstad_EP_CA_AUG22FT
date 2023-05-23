@@ -5,6 +5,10 @@ const db = require("../models/index")
 const AuthService = require("../services/authService");
 const authService = new AuthService(db);
 
+// get middlewares
+const isAdmin = require("../middleware/validateTokenAdmin");
+
+
 // import validator
 const validator = require("validator");
 
@@ -60,5 +64,21 @@ router.post("/signup", async (req, res, next) => {
         return res.status(500).jsend.error(ex.message);
     }
 });
+
+// handles delete user, used for test purposes, a
+router.delete("/users/:username", isAdmin, async (req, res, next) => {
+    const username = req.params.username
+
+    try {
+        await authService.deleteUser(username);
+        return res.jsend.success({message: "User was removed"});
+    } catch (ex) {
+        if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
+        return res.status(500).jsend.error(ex.message);
+    }
+
+})
+
+
 
 module.exports = router;

@@ -15,27 +15,45 @@ const itemService = new ItemService(db);
 const validateOnCreate = async (req, res, next) => {
 
     // destruct requesat body
-    const { itemName, categoryId, imageUrl,sku, price, stockQuantity } = req.body;
+    const { itemName, category, categoryId, imageUrl,sku, price, stockQuantity } = req.body;
     
     // check if all required items are provided
     const valuesError = {};   
 
     if (!itemName) valuesError["itemName"] = "Name is required!";   
 
-    if (!categoryId) valuesError["categoryId"] = "Category id is required!";
-    if (categoryId && !(await itemService.categoryExist(categoryId)))
-        valuesError["categoryId"] = "Provided category does not exist...";
-        
+    // if (!categoryId) valuesError["categoryId"] = "Category id is required!";
+    if (!category && !categoryId) {
+        valuesError["category"] = "No category was provided";
+        valuesError["categoryId"] = "Category ID can also be provided";
+    }
+
+    if(category && categoryId) {
+        valuesError["category"] = "Will not accept both provided category name and category id";
+        valuesError["categoryId"] = "Will not accept both provided category name and category id";
+    }
+
+    if (!category && categoryId) {
+        const res = await itemService.categoryExistById(categoryId);
+        if (!res) valuesError["categoryID"] = "Provided category does not exist";
+    }
+
+    if (category && !categoryId) {
+        const id = await itemService.categoryExistByName(category);
+        if (id) req.body.categoryId = id;
+        if (!id) valuesError["category"] = "Provided category does not exist";
+    }
+
     if (!imageUrl) valuesError["imageUrl"] = "Image url was not provided";
     if (!sku) valuesError["sku"] = "Product code is required";
 
-    if (!price) valuesError["price"] = "Price is required";
+    if (price !== 0 && !price) valuesError["price"] = "Price is required";
     if (price && isNaN(parseFloat(price))) valuesError["price"] = "Price must be a number";
 
-    if (!stockQuantity) valuesError["stockQuantity"] = "Stock quantity was not provided";
+    if (stockQuantity !== 0 && !stockQuantity) valuesError["stockQuantity"] = "Stock quantity was not provided";
     if (stockQuantity && isNaN(parseInt(stockQuantity)))
         valuesError["stockQuantity"] = "Stock quantity must be a number";
-    if (stockQuantity && !isNaN(parseInt(stockQuantity)) && parseInt(stockQuantity) <= 0 )
+    if (stockQuantity && !isNaN(parseInt(stockQuantity)) && parseInt(stockQuantity) < 0 )
         valuesError["stockQuantity"] = "Stock quantity can not be a negative number";
 
     // throw fail if any values not valid

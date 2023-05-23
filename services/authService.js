@@ -168,9 +168,9 @@ class AuthService {
      * @param {string} username 
      */
     async deleteUser(username) {
-        console.log("-- DEV :: USER " + username.toString() + " was deleted!!");
         const user = await this.#getUserByUserName(username);
-        if (user) await user.destroy();
+        if (!user) throw new NotFoundError("Username not found");
+        await user.destroy();
     }
 }
 

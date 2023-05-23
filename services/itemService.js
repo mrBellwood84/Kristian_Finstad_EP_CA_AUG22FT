@@ -48,12 +48,18 @@ class ItemService {
      * @param {string | number} id 
      * @returns { boolean } true if exists
      */
-    async categoryExist(id) {
+    async categoryExistById(id) {
         const res = await this.#sequelize.query("select count(id) as c from categories where id = ?", {
             replacements: [ id ],
             type: QueryTypes.SELECT,
         })
         return res[0].c > 0
+    }
+
+    async categoryExistByName(name) {
+        const res = await this.#Category.findOne({where: { name }});
+        if (!res) return undefined;
+        return res.id;
     }
 
     /** get all existing item entities */

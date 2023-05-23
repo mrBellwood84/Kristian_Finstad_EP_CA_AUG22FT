@@ -3,7 +3,7 @@
  */
 
 const { Op, QueryTypes } = require("sequelize");
-const { NotFoundError } = require("../errors/dataErrors");
+const { NotFoundError, HappyEasterError } = require("../errors/dataErrors");
 
 class UtilService {
 
@@ -70,6 +70,7 @@ class UtilService {
      * @returns {Array} 
      */
     async #getInitialData() {
+        console.log("-- DEV :: Fetchind data!!")
         const url = "http://143.42.108.232:8888/items/stock"
         const response = await fetch(url, { method: "GET" }).then(async response => await response.json() );
         return response.data;
@@ -79,6 +80,10 @@ class UtilService {
      * Populate database with data from Noroff API
      */
     async populateDb() {
+
+        const itemCount = await this.#sequelize.query("select count(*) as c from items", {type: QueryTypes.SELECT});
+        if (itemCount[0].c > 0) return "Data exists in database"
+
         const data  = await this.#getInitialData();
 
         const report = {
