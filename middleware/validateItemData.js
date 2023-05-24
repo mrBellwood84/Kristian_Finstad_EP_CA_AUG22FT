@@ -15,49 +15,33 @@ const itemService = new ItemService(db);
 const validateOnCreate = async (req, res, next) => {
 
     // destruct requesat body
-    const { itemName, category, categoryId, imageUrl,sku, price, stockQuantity } = req.body;
+    const { itemName, categoryId, imageUrl,sku, price, stockQuantity } = req.body;
     
     // check if all required items are provided
-    const valuesError = {};   
+    const missingRequired = {};   
 
-    if (!itemName) valuesError["itemName"] = "Name is required!";   
+    if (!itemName) missingRequired["itemName"] = "Name is required!";   
 
-    // if (!categoryId) valuesError["categoryId"] = "Category id is required!";
-    if (!category && !categoryId) {
-        valuesError["category"] = "No category was provided";
-        valuesError["categoryId"] = "Category ID can also be provided";
-    }
+    if (!categoryId) missingRequired["categoryId"] = "Category ID is required!"
+    if (categoryId && !(await itemService.checkCategoryExistById(categoryId))) missingRequired["categoryId"] = "Provided category does not exists";
 
-    if(category && categoryId) {
-        valuesError["category"] = "Will not accept both provided category name and category id";
-        valuesError["categoryId"] = "Will not accept both provided category name and category id";
-    }
+    if (!imageUrl) missingRequired["imageUrl"] = "Image url was not provided";
+    if (!sku) missingRequired["sku"] = "Product code is required";
 
-    if (!category && categoryId) {
-        const res = await itemService.categoryExistById(categoryId);
-        if (!res) valuesError["categoryID"] = "Provided category does not exist";
-    }
+    const priceExist = price !== undefined;
+    const priceIsNumber = !(isNaN(parseFloat(price)));
+    if (!priceExist) missingRequired["price"] = "Price is required";
+    if (priceExist && !priceIsNumber) missingRequired["price"] = "Price must be a number";
+    if (priceIsNumber && price < 0) missingRequired["price"] = "Price can not be a negative number";
 
-    if (category && !categoryId) {
-        const id = await itemService.categoryExistByName(category);
-        if (id) req.body.categoryId = id;
-        if (!id) valuesError["category"] = "Provided category does not exist";
-    }
-
-    if (!imageUrl) valuesError["imageUrl"] = "Image url was not provided";
-    if (!sku) valuesError["sku"] = "Product code is required";
-
-    if (price !== 0 && !price) valuesError["price"] = "Price is required";
-    if (price && isNaN(parseFloat(price))) valuesError["price"] = "Price must be a number";
-
-    if (stockQuantity !== 0 && !stockQuantity) valuesError["stockQuantity"] = "Stock quantity was not provided";
-    if (stockQuantity && isNaN(parseInt(stockQuantity)))
-        valuesError["stockQuantity"] = "Stock quantity must be a number";
-    if (stockQuantity && !isNaN(parseInt(stockQuantity)) && parseInt(stockQuantity) < 0 )
-        valuesError["stockQuantity"] = "Stock quantity can not be a negative number";
+    const sqExist = stockQuantity !== undefined;
+    const sqIsNumber= !(isNaN(parseInt(stockQuantity)));
+    if (!sqExist) missingRequired["stockQuantity"] = "Stock Quantity is required";
+    if (sqExist && !sqIsNumber) missingRequired["stockQuantity"] = "Stock Quantity must be an integer";
+    if (sqIsNumber && stockQuantity < 0) missingRequired["stockQuantity"] = "Stock Quantity can not be a negative number";
 
     // throw fail if any values not valid
-    if (Object.keys(valuesError).length > 0)  return res.status(400).jsend.fail(valuesError)
+    if (Object.keys(missingRequired).length > 0)  return res.status(400).jsend.fail(missingRequired)
     next();
 }
 
@@ -68,25 +52,25 @@ const validateOnUpdate = async (req, res, next) => {
     const {categoryId, price, stockQuantity } = req.body;
     
     // check if all required items are provided
-    const valuesError = {};   
+    const missingRequired = {};   
 
+    if (categoryId && !(await itemService.checkCategoryExistById(categoryId)))
+        missingRequired["categoryId"] = "Provided category does not exist...";
 
-    if (categoryId && !(await itemService.categoryExist(categoryId)))
-        valuesError["categoryId"] = "Provided category does not exist...";
-        
-    if (price && isNaN(parseFloat(price))) valuesError["price"] = "Price must be a number";
+    const priceExist = price !== undefined;
+    const priceIsNumber = !(isNaN(parseFloat(price)));
+    if (priceExist && !priceIsNumber) missingRequired["price"] = "Price must be a number";
+    if (priceIsNumber && price < 0) missingRequired["price"] = "Price can not be a negative number";
 
-    if (stockQuantity && isNaN(parseInt(stockQuantity)))
-        valuesError["stockQuantity"] = "Stock quantity must be a number";
-    if (stockQuantity && !isNaN(parseInt(stockQuantity)) && parseInt(stockQuantity) <= 0 )
-        valuesError["stockQuantity"] = "Stock quantity can not be a negative number";
+    const sqExist = stockQuantity !== undefined;
+    const sqIsNumber= !(isNaN(parseInt(stockQuantity)));
+    if (sqExist && !sqIsNumber) missingRequired["stockQuantity"] = "Stock Quantity must be an integer";
+    if (sqIsNumber && stockQuantity < 0) missingRequired["stockQuantity"] = "Stock Quantity can not be a negative number";
 
     // throw fail if any values not valid
-    if (Object.keys(valuesError).length > 0)  return res.status(400).jsend.fail(valuesError)
+    if (Object.keys(missingRequired).length > 0)  return res.status(400).jsend.fail(missingRequired)
     next();
-
 }
-
 
 module.exports = {
     validateOnCreate,

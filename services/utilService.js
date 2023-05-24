@@ -70,7 +70,6 @@ class UtilService {
      * @returns {Array} 
      */
     async #getInitialData() {
-        console.log("-- DEV :: Fetchind data!!")
         const url = "http://143.42.108.232:8888/items/stock"
         const response = await fetch(url, { method: "GET" }).then(async response => await response.json() );
         return response.data;

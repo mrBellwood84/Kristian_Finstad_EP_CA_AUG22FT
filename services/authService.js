@@ -1,3 +1,4 @@
+const { QueryTypes } = require("sequelize");
 const { UserExistError, UserEmailMaxError } = require("../errors/authErrors")
 const { NotFoundError } = require("../errors/dataErrors");
 const crypto = require("crypto");
@@ -8,27 +9,26 @@ const jwt = require("jsonwebtoken");
  */
 class AuthService {
 
+    #sequelize;
     #User;
     #UserEmail;
-    #Role;
 
     /**
      * @param {object} db sequelize db object
      */
     constructor(db) {
-
+        this.#sequelize = db.sequelize;
         this.#User = db.User;
         this.#UserEmail = db.UserEmail;
-        this.#Role = db.Role;
     }
 
     /** 
      * Query for user by username.
      * 
      * @param {string} username 
-     * @returns username if any, else null
+     * @returns User sequelize model 
      */
-    async #getUserByUserName(username) {
+    async #findUserByUsername(username) {
         return this.#User.findOne({where: { username }});
     }
 
@@ -39,8 +39,9 @@ class AuthService {
      * @returns {number}
      */
     async #getEmailCount(email) {
-        const UserEmailId = await this.#getEmailId(email);
-        return await this.#User.count({where: {UserEmailId}})
+        const query = "select count(*) as c from users as u join useremails as e on u.UserEmailId  = e.id where e.email = ?"
+        const result = await this.#sequelize.query(query, { replacements: [ email ], type: QueryTypes.SELECT, });
+        return result[0].c
     }
 
     /**
@@ -48,33 +49,43 @@ class AuthService {
      * 
      * @param {string} password clear text password
      * @param {string} salt salt string
-     * @returns {string} password hash
+     * @returns password hash
      */
     #encryptPassword(password, salt) {
         return crypto.pbkdf2Sync(password,salt, 320000, 32, "sha256");
     }
 
     /**
-     *  Get Role id. Primary for User role (default value).
+     *  Query role id by role name
      * 
      * @param {string} role default "User"
      * @returns {number} role entity id
      */
-    async #getRoleId(role = "User") {
-        const [ r, _ ] = await this.#Role.findOrCreate({where: { role }});
-        return r.id;
+    async #findRoleIdByRoleName(role = "User") {
+        const result = await this.#sequelize.query("select id from roles where role = ?", {
+            replacements: [ role ],
+            type: QueryTypes.SELECT,
+        });
+        const roleId = result[0].id
+        return roleId;
     }
 
     /**
-     *  Get role from role entity queried by id.
+     *  Query role name by id
      * 
      * @param {number} id 
      * @returns {string} role
      */
-    async #getRoleById(id) {
-        const role = await this.#Role.findOne({where: { id }})
-        return role.role;
+    async #findRoleNameByRoleId(id) {
+
+        const result = await this.#sequelize.query("select role from roles where id = ?", {
+            replacements: [ id ],
+            type: QueryTypes.SELECT,
+        });
+        return result[0].role;
+
     }
+
 
     /**
      * Get id of UserEmail entity from provided email.
@@ -84,7 +95,7 @@ class AuthService {
      * @returns {number} id of UserEmail entity
      */
     async #getEmailId(email) {
-        const [ userEmail, _ ] = await this.#UserEmail.findOrCreate({where: { email }});
+        const [ userEmail, _ ] = await this.#UserEmail.findOrCreate({ where: { email }});
         return userEmail.id;
     }
 
@@ -99,7 +110,7 @@ class AuthService {
     async login(username, password) {
 
         // get user, throw error if not exist
-        const user = await this.#getUserByUserName(username);
+        const user = await this.#findUserByUsername(username);
         if (!user) throw new NotFoundError();
 
         // check password, throw not found if no match
@@ -110,7 +121,7 @@ class AuthService {
         // create payload for token
         const payload = { 
             id: user.id,
-            role: await this.#getRoleById(user.RoleId),
+            role: await this.#findRoleNameByRoleId(user.RoleId),
         };
 
         // create and return token
@@ -136,7 +147,7 @@ class AuthService {
      */
     async signup(firstName, lastName, username, email, password, roleId = undefined) {
 
-        if (Boolean(await this.#getUserByUserName(username))) throw new UserExistError();
+        if (Boolean(await this.#findUserByUsername(username))) throw new UserExistError();
         if (await this.#getEmailCount(email) >= 4) throw new UserEmailMaxError();
 
         const salt = crypto.randomBytes(32);
@@ -149,12 +160,13 @@ class AuthService {
             UserEmailId: await this.#getEmailId(email),
             encryptedPassword,
             salt,
-            RoleId: roleId ?? await this.#getRoleId(),
+            RoleId: roleId ?? await this.#findRoleIdByRoleName(),
         });
     }
 
+    /** creates a new admin account */
     async createAdmin() {
-        const roleId = await this.#getRoleId("Admin");
+        const roleId = await this.#findRoleIdByRoleName("Admin");
         const firstName = "admin";
         const lastName = "admin";
         const userName = "Admin";
@@ -164,11 +176,10 @@ class AuthService {
     }
 
     /**
-     * DEV :: added for dev purposes.
      * @param {string} username 
      */
     async deleteUser(username) {
-        const user = await this.#getUserByUserName(username);
+        const user = await this.#findUserByUsername(username);
         if (!user) throw new NotFoundError("Username not found");
         await user.destroy();
     }

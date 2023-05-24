@@ -9,7 +9,7 @@ const CategoryService = require("../services/categoryService");
 const categoryService = new CategoryService(db);
 
 // get middleware for admin auth
-const isAdmin = require("../middleware/validateTokenAdmin");
+const { authAdmin } = require("../middleware/authAdminToken");
 
 // open endpoint for getting all categories
 router.get("/categories", async (req, res, next) => {
@@ -22,7 +22,7 @@ router.get("/categories", async (req, res, next) => {
 });
 
 // post new category, admin only
-router.post("/category", isAdmin, async (req, res, next) => {
+router.post("/category", authAdmin, async (req, res, next) => {
 
     const { name } = req.body;
 
@@ -38,7 +38,7 @@ router.post("/category", isAdmin, async (req, res, next) => {
 });
 
 // update category, admin only
-router.put("/category/:id", isAdmin, async (req, res, next) => {
+router.put("/category/:id", authAdmin, async (req, res, next) => {
 
     // get request variables
     const id = req.params.id;
@@ -59,7 +59,7 @@ router.put("/category/:id", isAdmin, async (req, res, next) => {
 });
 
 // delete category admin only
-router.delete("/category/:id", isAdmin, async (req, res, next) => {
+router.delete("/category/:id", authAdmin, async (req, res, next) => {
 
     const id = req.params.id;
 

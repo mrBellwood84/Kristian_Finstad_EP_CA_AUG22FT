@@ -47,7 +47,6 @@ class CategoryService {
      */
     async create(name) {
 
-
         // check if category exists in database, throw error if exists
         const exist = await this.#categoryExist(name)
         if (exist) throw new EntityExistError("Category already exists in database");
@@ -65,7 +64,6 @@ class CategoryService {
      */
     async update(id, name) {
 
-
         // check if entity exist
         const entity = await this.#Category.findOne({where: { id }})
         if (!entity) throw new NotFoundError("Category does not exist!")
@@ -76,7 +74,6 @@ class CategoryService {
         // throw entity exist error if category exist in database
         const otherExist = await this.#categoryExist(name);
         if (otherExist) throw new EntityExistError("Category already exists in database");
-
         await entity.update({ name });
     }
 

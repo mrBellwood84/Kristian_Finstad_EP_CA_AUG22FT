@@ -4,11 +4,13 @@ const router = require("express").Router();
 const db = require("../models/index");
 const UtilService = require("../services/utilService");
 const AuthService = require("../services/authService");
-const { NotFoundError } = require("../errors/dataErrors");
 const utilService = new UtilService(db);
 const authService = new AuthService(db);
 
+// import error used by db services.
+const { NotFoundError } = require("../errors/dataErrors");
 
+// run application setup
 router.post("/setup", async (req, res, next) => {
 
     try {
@@ -37,8 +39,9 @@ router.post("/setup", async (req, res, next) => {
     } catch (ex) {
         return res.status(500).jsend.error(ex.message);
     }
-})
+});
 
+// search based on values provided in request body
 router.post("/search", async (req, res, next) => {
 
     const { itemName, category, sku } = req.body;
@@ -50,8 +53,7 @@ router.post("/search", async (req, res, next) => {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message)
     }
-})
-
+});
 
 
 module.exports = router;

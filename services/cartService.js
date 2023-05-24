@@ -167,20 +167,23 @@ class CartService {
      * @param {string | number} cartItemId 
      * @param {number} amount 
      */
-    async updateCartItem(userId, cartItemId, amount) {
-        // quickcheck if cart belong to user
-        const cartItemExist = await this.#checkCartItemBelongToUser(userId, cartItemId)
-        if (!cartItemExist) throw new NotFoundError("Cart item ID provided does not exist for registered user!");
+    async updateCartItem(userId, itemId, amount) {
 
-        // get cartitem and item and check if item not out of stock
-        const cartItem = await this.#CartItem.findOne({where: {id: cartItemId }});
-        const item = await this.#Item.findOne({where: {id: cartItem.itemId}});
-        if (item.stockQuantity < amount) throw new OutOfStockError("Requested amout exceed items in stock, cart item can not be updated!")
+        // find cart and item here
+        const cart = await this.#Cart.findOne({ where: { userId }});
+        const item = await this.#Item.findOne({ where: { id: itemId }})
 
-        // update item
-        const price = amount * item.price;
+        // throw errror if cart or item does not exist
+        if (!cart) throw new NotFoundError("User cart not found");
+        if (!item) throw new NotFoundError("Item not found");
+
+        const cartItem = await this.#CartItem.findOne({where: { cartId: cart.id, itemId: item.id }});
+
+        if (!cartItem) throw new NotFoundError("Item don't exist in cart. Use POST request to add new items to cart");
+        if (item.stockQuantity < amount) throw new OutOfStockError("Requested amout exceed items in stock");
+
         cartItem.amount = amount;
-        cartItem.price = price;
+        cartItem.price = item.price * amount;
         await cartItem.save();
     }
 
@@ -191,12 +194,24 @@ class CartService {
      * @param {string | number} userId 
      * @param {string | number} cartItemId 
      */
-    async deleteSingleCartItem(userId, cartItemId) {
+    async deleteSingleCartItem(userId, itemId) {
 
-        const cartItemExists = await this.#checkCartItemBelongToUser(userId, cartItemId);
-        if (!cartItemExists) throw new NotFoundError("Cart item ID provided does not exist for registered user!");
+        // query cartitem id by user id and item id;
+        const query = `
+            select ci.id as id from carts as c
+                join cartItems as ci on c.id = ci.cartId
+                join items as i on i.id = ci.itemId
+                where i.id = ? and c.userid = ?`
+        
+        const result = await this.#sequelize.query(query, {
+            replacements: [ itemId, userId ],
+            type: QueryTypes.SELECT,
+        });
 
-        const cartItem = await this.#CartItem.findOne({where: { id: cartItemId }});
+        if (result.length === 0) throw new NotFoundError("Cart item does not exist for user");
+        const id = result[0].id;
+
+        const cartItem = await this.#CartItem.findOne({where: { id }});
         await cartItem.destroy();
     }
 

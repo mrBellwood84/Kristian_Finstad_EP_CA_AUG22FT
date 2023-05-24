@@ -76,10 +76,16 @@ describe("Required tests", () => {
     });
 
     test("5: POST /item - Success - new item created", async () => {
+
+        const categorySearchResponse = await request(app).get("/categories")
+        expect(categorySearchResponse.status).toEqual(200)
+
+        const catId = categorySearchResponse.body.data.filter(x => x.name === testCategoryName)[0].id;
+
         const testItem = {
             itemName: testItemName,
             imageUrl: ".",
-            category: testCategoryName,
+            categoryId: catId,
             sku: testItemSKU,
             price: 0,
             stockQuantity: 0,            

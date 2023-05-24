@@ -6,10 +6,10 @@ const OrderService = require("../services/orderService");
 const orderService = new OrderService(db);
 
 // get required middlewares
-const authUser = require("../middleware/validateToken");
-const authAdmin = require("../middleware/validateTokenAdmin");
+const { authUser } = require("../middleware/authUserToken");
+const { authAdmin } = require("../middleware/authAdminToken");
 
-// get requred error classes
+// import errors used by database serivces
 const { NotFoundError, OutOfStockError, HappyEasterError } = require("../errors/dataErrors");
 
 // get user orders

@@ -1,16 +1,17 @@
 const router = require("express").Router();
 
-// get errors used by dataservices
+// import errors used by dataservices
 const { EntityExistError, NotFoundError } = require("../errors/dataErrors");
 
-// get db and required services
+// get db and required service
 const db = require("../models/index");
 const ItemService = require("../services/itemService");
 const itemService = new ItemService(db)
 
 // middlewares for endpoints
 const { validateOnCreate, validateOnUpdate,  } = require("../middleware/validateItemData")
-const isAdmin = require("../middleware/validateTokenAdmin");
+const { authAdmin } = require("../middleware/authAdminToken")
+
 
 // get request for all data
 router.get("/items", async (req, res, next) => {
@@ -23,7 +24,7 @@ router.get("/items", async (req, res, next) => {
 });
 
 // create new item
-router.post("/item", validateOnCreate, isAdmin, async (req, res, next) => {
+router.post("/item", authAdmin, validateOnCreate, async (req, res, next) => {
 
     // destruct requesat body
     const { body } = req;
@@ -39,7 +40,7 @@ router.post("/item", validateOnCreate, isAdmin, async (req, res, next) => {
 });
 
 // update from 
-router.put("/item/:id", validateOnUpdate, isAdmin, async (req, res, next) => {
+router.put("/item/:id", authAdmin, validateOnUpdate, async (req, res, next) => {
     
     const id = req.params.id;
     const { body } = req
@@ -52,10 +53,9 @@ router.put("/item/:id", validateOnUpdate, isAdmin, async (req, res, next) => {
         if (ex instanceof EntityExistError) return res.status(400).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
-
 });
 
-router.delete("/item/:id", isAdmin, async (req, res, next) => {
+router.delete("/item/:id", authAdmin, async (req, res, next) => {
     const id = req.params.id;
 
     try {
@@ -65,7 +65,6 @@ router.delete("/item/:id", isAdmin, async (req, res, next) => {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
         return res.status(500).jsend.error(ex.message);
     }
-    return res.jsend.success("DEV :: delete endpoint exist")
 });
 
 module.exports = router;

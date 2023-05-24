@@ -5,12 +5,15 @@ const CartService = require("../services/cartService");
 const cartService = new CartService(db);
 
 // import auth middleware 
-const validUser = require("../middleware/validateToken")
-const isAdmin = require("../middleware/validateTokenAdmin");
+const { authUser } = require("../middleware/authUserToken");
+const { authAdmin } = require("../middleware/authAdminToken");
+const { validOnCreate } = require("../middleware/validateCartItem");
+
+// import errors used by db service
 const { NotFoundError, EntityExistError, OutOfStockError } = require("../errors/dataErrors");
 
 // get user 
-router.get("/cart", validUser, async (req, res, next) => {
+router.get("/cart", authUser, async (req, res, next) => {
     const userId = req.token.id;
 
     try {
@@ -22,7 +25,7 @@ router.get("/cart", validUser, async (req, res, next) => {
     }
 });
 
-router.get("/allcarts", isAdmin, async (req, res, next) => {
+router.get("/allcarts", authAdmin, async (req, res, next) => {
     
     try {
         const result = await cartService.getAllUserCarts();
@@ -33,18 +36,11 @@ router.get("/allcarts", isAdmin, async (req, res, next) => {
 });
 
 // add existing items to user cart
-router.post("/cart_item", validUser, async (req, res, next) => {
+router.post("/cart_item", authUser, validOnCreate, async (req, res, next) => {
 
     // get user id and destruct request body fields
     const userId = req.token.id;
     const { itemId, amount } = req.body
-
-    // validate incoming data
-    const valueReport = {};
-    if (!itemId) valueReport["itemId"] = "Item ID is required!";
-    if (amount && isNaN(parseInt(amount))) valueReport["amount"] = "Provided amount must be an integer";
-    if (amount && isNaN(parseInt(amount)) && parseInt(amount) < 1) valueReport["amount"] = "Provided amount must be at least 1";
-    if (Object.keys(valueReport).length > 0) return res.status(400).jsend.fail(valueReport);
 
     try {
         await cartService.addCartItem(userId, itemId, amount)
@@ -58,11 +54,11 @@ router.post("/cart_item", validUser, async (req, res, next) => {
 });
 
 // update existing cart item
-router.put("/cart_item/:id", validUser, async (req, res, next) => {
+router.put("/cart_item/:id", authUser, async (req, res, next) => {
     
     // get values from request
     const userId = req.token.id;
-    const cartItemId = req.params.id;
+    const itemId = req.params.id;
     const newAmount = req.body.newAmount;
 
     // send failed if requested amount is invalid
@@ -74,7 +70,7 @@ router.put("/cart_item/:id", validUser, async (req, res, next) => {
     if (amount < 1) return res.status(400).jsend.fail({newAmount: "Amount must be at least 1"});
 
     try {
-        await cartService.updateCartItem(userId, cartItemId, amount);
+        await cartService.updateCartItem(userId, itemId, amount);
         return res.jsend.success({message: "Cart Item was updated"});
 
     } catch (ex) {
@@ -85,13 +81,13 @@ router.put("/cart_item/:id", validUser, async (req, res, next) => {
 });
 
 // removes cart item from cart by provided id
-router.delete("/cart_item/:id", validUser, async (req, res, next) => {
+router.delete("/cart_item/:id", authUser, async (req, res, next) => {
 
     const userId = req.token.id;
-    const cartItemId = req.params.id;
+    const itemId = req.params.id;
 
     try {
-        await cartService.deleteSingleCartItem(userId, cartItemId);
+        await cartService.deleteSingleCartItem(userId, itemId);
         return res.jsend.success({message: "Item was removed from cart"})
     } catch (ex) {
         if (ex instanceof NotFoundError) return res.status(404).jsend.fail(ex.message);
@@ -100,7 +96,7 @@ router.delete("/cart_item/:id", validUser, async (req, res, next) => {
 });
 
 // deletes all items from cart
-router.delete("/cart/:id", validUser, async (req, res, next) => {
+router.delete("/cart/:id", authUser, async (req, res, next) => {
 
     const userId = req.token.id;
     const cartId = req.params.id;
@@ -113,7 +109,5 @@ router.delete("/cart/:id", validUser, async (req, res, next) => {
         return res.status(500).jsend.error(ex.message);
     }
 });
-
-
 
 module.exports = router;

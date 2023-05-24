@@ -48,18 +48,12 @@ class ItemService {
      * @param {string | number} id 
      * @returns { boolean } true if exists
      */
-    async categoryExistById(id) {
+    async checkCategoryExistById(id) {
         const res = await this.#sequelize.query("select count(id) as c from categories where id = ?", {
             replacements: [ id ],
             type: QueryTypes.SELECT,
         })
         return res[0].c > 0
-    }
-
-    async categoryExistByName(name) {
-        const res = await this.#Category.findOne({where: { name }});
-        if (!res) return undefined;
-        return res.id;
     }
 
     /** get all existing item entities */
@@ -104,7 +98,7 @@ class ItemService {
     }
 
     /** 
-     *  Updatesitem entity with values from provided object
+     *  Update item entity with values from provided object
      *  Will throw error if other entity with provided Sku value exist.
      *  Returns warning if changing name is similar to existing entity.
      * 
@@ -120,7 +114,7 @@ class ItemService {
         if (!item) throw new NotFoundError("Item not found!")
 
         // destruct body
-        const { itemName, categoryId, imageUrl,sku, price, stockQuantity } = body;
+        const { itemName, categoryId, imageUrl, sku, price, stockQuantity } = body;
         
         // check do not duplicate sku and warn name duplicate
         if (sku && item.sku !== sku && await this.#checkSkuExist(sku)) 
