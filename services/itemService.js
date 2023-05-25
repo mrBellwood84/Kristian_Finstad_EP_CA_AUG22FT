@@ -5,12 +5,10 @@ class ItemService {
     
     #sequelize
     #Item
-    #Category
 
     constructor(db) {
         this.#sequelize = db.sequelize;
         this.#Item = db.Item
-        this.#Category = db.Category
     }
 
     /** 
@@ -56,15 +54,22 @@ class ItemService {
         return res[0].c > 0
     }
 
-    /** get all existing item entities */
-    async getAll() {
+    /**
+     *  Get all items including category entities
+     *  Can exclude items out of stock by boolean parameter
+     * 
+     * @param {boolean} inStockOnly default value = false
+     * @returns 
+     */
+    async getAll(inStockOnly = false) {
         const result = await this.#Item.findAll({
             include: "category",
             attributes: {
                 exclude: ["categoryId"]
             }
         })
-        return result;
+        if(!inStockOnly) return result;
+        return result.filter(x => x.stockQuantity > 0);
     }
 
     /** 

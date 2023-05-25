@@ -11,12 +11,17 @@ const itemService = new ItemService(db)
 // middlewares for endpoints
 const { validateOnCreate, validateOnUpdate,  } = require("../middleware/validateItemData")
 const { authAdmin } = require("../middleware/authAdminToken")
+const { setGuestToken } = require("../middleware/authGuestToken");
 
 
 // get request for all data
-router.get("/items", async (req, res, next) => {
+router.get("/items", setGuestToken, async (req, res, next) => {
+
+    const role = req.token.role;
+    const inStockOnly = role === "Guest"
+
     try {
-        const result = await itemService.getAll();
+        const result = await itemService.getAll(inStockOnly);
         return res.jsend.success(result);
     } catch (ex) {
         return res.status(500).jsend.error(ex.message);
