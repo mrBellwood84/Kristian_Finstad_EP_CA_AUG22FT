@@ -1,6 +1,6 @@
 # Noroff Backend Exam Project
 
-Backend solution for RestAPI for [Exam Project Assignment](./documentation/EP_CA.pdf).
+Backend solution for RestAPI for [Exam Project Assignment](./documentation/parts/EP_CA.pdf).
 
 Created with ExpressJS. No views or view engine are included, RestAPI endpoints only.
 
